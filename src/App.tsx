@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import "./App.scss";
 import { Warrior } from "./Warrior";
 
@@ -26,8 +26,15 @@ function App() {
   };
 
   const onTrainInputHandler = (event: ChangeEvent<HTMLInputElement>) => {
+    event.stopPropagation();
     const { name, value } = event.target as HTMLInputElement;
     setTrainInputs((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const onKeyDownSpaceHandler = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === " ") event.preventDefault();
+    const { name, value } = event.target as HTMLInputElement;
+    setTrainInputs((prev) => ({ ...prev, [name]: value + " " }));
   };
 
   useEffect(() => {
@@ -79,7 +86,16 @@ function App() {
           <button
             className="fight"
             onClick={() => {
-              warrior?.battle(+enemyLvl);
+              setWarrior((prev) => {
+                const warrior = new Warrior({
+                  nm: prev?.name()!,
+                  lvl: prev?.level()!,
+                  exp: prev?.experience()!,
+                  ach: prev?.achievements()!,
+                });
+                alert(warrior.battle(+enemyLvl));
+                return warrior;
+              });
             }}
           >
             Бой:{" "}
@@ -87,6 +103,7 @@ function App() {
               name="enemyLvl"
               type="number"
               placeholder="lvl противника"
+              onClick={(ev) => ev.stopPropagation()}
               onChange={(ev) => setEnemyLvl(ev.target.value)}
               inputMode="numeric"
               enterKeyHint="done"
@@ -103,11 +120,13 @@ function App() {
                   exp: prev?.experience()!,
                   ach: prev?.achievements()!,
                 });
-                warrior.training([
-                  trainInputs.achievement,
-                  +trainInputs.rewardExp,
-                  +trainInputs.minLvl,
-                ]);
+                alert(
+                  warrior.training([
+                    trainInputs.achievement,
+                    +trainInputs.rewardExp,
+                    +trainInputs.minLvl,
+                  ])
+                );
                 return warrior;
               });
             }}
@@ -118,32 +137,45 @@ function App() {
               name="achievement"
               placeholder="Достижение"
               value={trainInputs.achievement}
+              onKeyDown={onKeyDownSpaceHandler}
               onClick={(ev) => ev.stopPropagation()}
-              onChange={onTrainInputHandler}
-              enterKeyHint="done"
+              onInput={onTrainInputHandler}
             />
             <input
               type="number"
               name="rewardExp"
               inputMode="numeric"
               value={trainInputs.rewardExp}
+              onKeyDown={onKeyDownSpaceHandler}
               onClick={(ev) => ev.stopPropagation()}
               onChange={onTrainInputHandler}
               placeholder="Опыт в награду"
-              enterKeyHint="done"
             />
             <input
               type="number"
               name="minLvl"
               inputMode="numeric"
               value={trainInputs.minLvl}
+              onKeyDown={onKeyDownSpaceHandler}
               onClick={(ev) => ev.stopPropagation()}
               onChange={onTrainInputHandler}
               placeholder="Минимальный lvl"
-              enterKeyHint="done"
             />
           </button>
         </div>
+        <footer>
+          <button
+            className="exit"
+            onClick={() => {
+              if (window.confirm("Весь прогресс персонажа удалиться, вы уверены?")) {
+                localStorage.removeItem("warrior");
+                setWarrior(undefined);
+              }
+            }}
+          >
+            Завершить приключение
+          </button>
+        </footer>
       </div>
     </div>
   );
